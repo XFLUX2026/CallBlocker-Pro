@@ -27,9 +27,11 @@ jobs:
           cat >> build.gradle.kts <<'EOF'
 
           // Keep Java and Kotlin bytecode targets consistent for CI builds.
-          tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
-              sourceCompatibility = "17"
-              targetCompatibility = "17"
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
           }
           tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
               kotlinOptions.jvmTarget = "17"
