@@ -21,6 +21,21 @@ jobs:
           test -f CallBlocker-Pro/settings.gradle.kts
           test -f CallBlocker-Pro/app/build.gradle.kts
 
+      - name: Align Java and Kotlin targets
+        working-directory: CallBlocker-Pro/app
+        run: |
+          cat >> build.gradle.kts <<'EOF'
+
+          // Keep Java and Kotlin bytecode targets consistent for CI builds.
+          tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+              sourceCompatibility = "17"
+              targetCompatibility = "17"
+          }
+          tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+              kotlinOptions.jvmTarget = "17"
+          }
+          EOF
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
