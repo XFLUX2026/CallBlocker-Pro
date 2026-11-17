@@ -2,7 +2,7 @@ name: Build CallBlocker Pro APK
 
 on:
   push:
-    branches: [ main, feature/historico-e-icone ]
+    branches: [ main, feature/historico-e-icone, feature/versao-2-completa ]
   workflow_dispatch:
 
 permissions:
