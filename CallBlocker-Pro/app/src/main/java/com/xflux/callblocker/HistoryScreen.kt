@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,16 +26,30 @@ private val HistoryMuted = Color(0xFFB8CBCD)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(dao: BlockedDao, onChanged: () -> Unit, onAllowNumber: (String) -> Unit) {
+fun HistoryScreen(
+    dao: BlockedDao,
+    onChanged: () -> Unit,
+    onAllowNumber: (String) -> Unit,
+    onBlockNumber: (String) -> Unit
+) {
     val scope = rememberCoroutineScope()
     var calls by remember { mutableStateOf<List<BlockedCall>>(emptyList()) }
     var selected by remember { mutableStateOf<BlockedCall?>(null) }
     var refresh by remember { mutableIntStateOf(0) }
+    var confirmClear by remember { mutableStateOf(false) }
     LaunchedEffect(refresh) { calls = dao.getAll() }
+
     Column(Modifier.fillMaxSize()) {
-        Text("CHAMADAS BLOQUEADAS", color = HistoryMint, fontWeight = FontWeight.Bold)
-        Text("${calls.size} registros", color = HistoryMuted, style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("CHAMADAS BLOQUEADAS", color = HistoryMint, fontWeight = FontWeight.Bold)
+                Text("${calls.size} registros", color = HistoryMuted, style = MaterialTheme.typography.bodySmall)
+            }
+            TextButton(onClick = { confirmClear = true }, enabled = calls.isNotEmpty()) {
+                Icon(Icons.Default.Delete, null); Spacer(Modifier.width(4.dp)); Text("Limpar")
+            }
+        }
+        Spacer(Modifier.height(8.dp))
         if (calls.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Nenhuma chamada bloqueada até agora.", color = HistoryMuted)
@@ -64,6 +79,22 @@ fun HistoryScreen(dao: BlockedDao, onChanged: () -> Unit, onAllowNumber: (String
             }
         }
     }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Apagar todo o histórico?") },
+            text = { Text("Essa ação não pode ser desfeita.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    scope.launch { dao.deleteAll(); refresh++; onChanged() }
+                }) { Text("Apagar tudo", color = Color(0xFFFF817D)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancelar") } }
+        )
+    }
+
     selected?.let { call ->
         ModalBottomSheet(onDismissRequest = { selected = null }) {
             val attempts = calls.count { it.number == call.number }
@@ -74,7 +105,7 @@ fun HistoryScreen(dao: BlockedDao, onChanged: () -> Unit, onAllowNumber: (String
                 Text(SimpleDateFormat("dd/MM/yyyy 'às' HH:mm:ss", Locale("pt", "BR")).format(Date(call.timestamp)), color = HistoryMuted)
                 Spacer(Modifier.height(12.dp))
                 Text("Motivo: ${call.reason}", color = Color.White)
-                Text("Tentativas deste número: $attempts", color = HistoryMuted)
+                Text("Tentativas registradas: $attempts", color = HistoryMuted)
                 Spacer(Modifier.height(20.dp))
                 if (call.number != "Número oculto") {
                     Button(onClick = {
@@ -82,7 +113,13 @@ fun HistoryScreen(dao: BlockedDao, onChanged: () -> Unit, onAllowNumber: (String
                         scope.launch { dao.deleteById(call.id); refresh++; onChanged() }
                         selected = null
                     }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Desbloquear número")
+                        Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)); Text("Permitir este número")
+                    }
+                    OutlinedButton(onClick = {
+                        onBlockNumber(call.number)
+                        selected = null
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Block, null); Spacer(Modifier.width(8.dp)); Text("Bloquear sempre este número")
                     }
                 }
                 OutlinedButton(onClick = {
