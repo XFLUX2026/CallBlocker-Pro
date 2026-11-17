@@ -98,10 +98,15 @@ class MainActivity : ComponentActivity() {
                         0 -> {
                             Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    RadarShield(Modifier.size(176.dp))
-                                    Text(if (active) "PROTEÇÃO ATIVA" else "PROTEÇÃO DESATIVADA",
-                                        color = if (active) Mint else Danger, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                    Text("Radar visual • efeito decorativo", color = Muted, fontSize = 12.sp)
+                                    RadarShield(active = active, modifier = Modifier.size(176.dp))
+                                    Text(if (active) "PROTEÇÃO ATIVADA" else "PROTEÇÃO DESATIVADA",
+                                        color = if (active) Lime else Danger, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                    Text(
+                                        if (active) "Seu aparelho está protegido contra chamadas indesejadas."
+                                        else "Desativado: risco de receber ligações indesejadas.",
+                                        color = if (active) Muted else Danger,
+                                        fontSize = 12.sp
+                                    )
                                     Spacer(Modifier.height(12.dp))
                                     Button(onClick = {
                                         if (!active) roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
@@ -225,33 +230,59 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun RadarShield(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "radar")
-    val rotation by transition.animateFloat(
-        initialValue = 0f, targetValue = 360f,
-        animationSpec = infiniteRepeatable(animation = tween(2800, easing = LinearEasing), repeatMode = RepeatMode.Restart),
+private fun RadarShield(active: Boolean, modifier: Modifier = Modifier) {
+    val rotation by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (active) 360f else 0f,
+        animationSpec = if (active) {
+            infiniteRepeatable(
+                animation = tween(2800, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            )
+        } else {
+            tween(durationMillis = 0)
+        },
         label = "radarRotation"
     )
+    val radarColor = if (active) Lime else Danger
+    val radarGlow = if (active) Mint else Danger
     Box(modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
             val radius = size.minDimension * .43f
-            drawCircle(Mint.copy(alpha = .08f), radius = radius * 1.12f, center = center)
-            drawCircle(Mint.copy(alpha = .35f), radius = radius, center = center, style = Stroke(width = 1.5.dp.toPx()))
-            drawCircle(Mint.copy(alpha = .22f), radius = radius * .66f, center = center, style = Stroke(width = 1.dp.toPx()))
-            drawCircle(Mint.copy(alpha = .18f), radius = radius * .33f, center = center, style = Stroke(width = 1.dp.toPx()))
-            drawLine(Mint.copy(alpha = .22f), Offset(center.x - radius, center.y), Offset(center.x + radius, center.y), 1.dp.toPx())
-            drawLine(Mint.copy(alpha = .22f), Offset(center.x, center.y - radius), Offset(center.x, center.y + radius), 1.dp.toPx())
-            rotate(rotation, pivot = center) {
-                drawArc(Mint.copy(alpha = .22f), -90f, 105f, true,
-                    topLeft = Offset(center.x - radius, center.y - radius), size = Size(radius * 2, radius * 2))
-                drawLine(Mint, center, Offset(center.x, center.y - radius), 2.dp.toPx())
+            drawCircle(radarColor.copy(alpha = if (active) .10f else .05f), radius = radius * 1.12f, center = center)
+            drawCircle(radarColor.copy(alpha = .45f), radius = radius, center = center, style = Stroke(width = 1.5.dp.toPx()))
+            drawCircle(radarColor.copy(alpha = .25f), radius = radius * .66f, center = center, style = Stroke(width = 1.dp.toPx()))
+            drawCircle(radarColor.copy(alpha = .20f), radius = radius * .33f, center = center, style = Stroke(width = 1.dp.toPx()))
+            drawLine(radarColor.copy(alpha = .25f), Offset(center.x - radius, center.y), Offset(center.x + radius, center.y), 1.dp.toPx())
+            drawLine(radarColor.copy(alpha = .25f), Offset(center.x, center.y - radius), Offset(center.x, center.y + radius), 1.dp.toPx())
+            if (active) {
+                rotate(rotation, pivot = center) {
+                    drawArc(radarGlow.copy(alpha = .24f), -90f, 105f, true,
+                        topLeft = Offset(center.x - radius, center.y - radius), size = Size(radius * 2, radius * 2))
+                    drawLine(radarColor, center, Offset(center.x, center.y - radius), 2.dp.toPx())
+                }
+            } else {
+                drawLine(radarColor.copy(alpha = .8f), Offset(center.x, center.y - radius * .72f),
+                    Offset(center.x, center.y + radius * .72f), 2.dp.toPx())
             }
-            drawCircle(Lime, radius = 3.dp.toPx(), center = Offset(center.x + radius * .52f, center.y - radius * .34f))
-            drawCircle(Mint, radius = 2.5.dp.toPx(), center = Offset(center.x - radius * .58f, center.y + radius * .18f))
+            if (active) {
+                drawCircle(Lime, radius = 3.dp.toPx(), center = Offset(center.x + radius * .52f, center.y - radius * .34f))
+                drawCircle(Mint, radius = 2.5.dp.toPx(), center = Offset(center.x - radius * .58f, center.y + radius * .18f))
+            }
         }
-        Box(Modifier.size(82.dp).background(Color(0xFF104B4B), CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Shield, null, tint = Mint, modifier = Modifier.size(58.dp))
+        Box(
+            Modifier.size(82.dp).background(
+                if (active) Color(0xFF104B3B) else Color(0xFF4B2024),
+                CircleShape
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.Shield,
+                null,
+                tint = radarColor,
+                modifier = Modifier.size(58.dp)
+            )
         }
     }
 }
