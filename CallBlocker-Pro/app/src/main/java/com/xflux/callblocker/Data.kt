@@ -19,6 +19,7 @@ interface BlockedDao {
     @Query("SELECT * FROM blocked_calls ORDER BY timestamp DESC") suspend fun getAll(): List<BlockedCall>
     @Query("SELECT COUNT(*) FROM blocked_calls") suspend fun count(): Int
     @Query("DELETE FROM blocked_calls WHERE id = :id") suspend fun deleteById(id: Long)
+    @Query("DELETE FROM blocked_calls") suspend fun deleteAll()
 }
 
 @Database(entities = [BlockedCall::class], version = 1, exportSchema = false)
