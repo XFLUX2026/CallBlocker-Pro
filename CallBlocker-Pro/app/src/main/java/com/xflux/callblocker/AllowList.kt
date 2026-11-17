@@ -30,7 +30,27 @@ object AllowList {
                 ?.use { it.moveToFirst() } ?: false
         } catch (_: SecurityException) { false } catch (_: Exception) { false }
     }
-    private fun normalize(value: String): String = value.filter { it.isDigit() }.let {
+    fun normalize(value: String): String = value.filter { it.isDigit() }.let {
         if (it.startsWith("00")) it.drop(2) else it
     }
+}
+
+/** Lista manual de bloqueio. Tem prioridade sobre contatos e números permitidos. */
+object BlockList {
+    private const val PREF = "manual_block_list"
+    fun all(context: Context): Set<String> = context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
+        .getStringSet("numbers", emptySet())?.toSet() ?: emptySet()
+    fun add(context: Context, number: String) {
+        val clean = AllowList.normalize(number)
+        if (clean.isBlank()) return
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit()
+            .putStringSet("numbers", (all(context) + clean).toMutableSet()).apply()
+    }
+    fun remove(context: Context, number: String) {
+        val clean = AllowList.normalize(number)
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE).edit()
+            .putStringSet("numbers", (all(context) - clean).toMutableSet()).apply()
+    }
+    fun contains(context: Context, raw: String): Boolean =
+        raw.isNotBlank() && all(context).any { android.telephony.PhoneNumberUtils.compare(it, raw) }
 }
