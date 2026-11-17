@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                                     RadarShield(Modifier.size(176.dp))
                                     Text(if (active) "PROTEÇÃO ATIVA" else "PROTEÇÃO DESATIVADA",
                                         color = if (active) Mint else Danger, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                    Text("Radar visual • monitoramento de chamadas", color = Muted, fontSize = 12.sp)
+                                    Text("Radar visual • efeito decorativo", color = Muted, fontSize = 12.sp)
                                     Spacer(Modifier.height(12.dp))
                                     Button(onClick = {
                                         if (!active) roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
