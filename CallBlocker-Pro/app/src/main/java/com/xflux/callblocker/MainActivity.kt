@@ -231,16 +231,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun RadarShield(active: Boolean, modifier: Modifier = Modifier) {
-    val rotation by androidx.compose.animation.core.animateFloatAsState(
+    val radarTransition = rememberInfiniteTransition(label = "radarTransition")
+    val rotation by radarTransition.animateFloat(
+        initialValue = 0f,
         targetValue = if (active) 360f else 0f,
-        animationSpec = if (active) {
-            infiniteRepeatable(
-                animation = tween(2800, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            )
-        } else {
-            tween(durationMillis = 0)
-        },
+        animationSpec = infiniteRepeatable(
+            animation = tween(2800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
         label = "radarRotation"
     )
     val radarColor = if (active) Lime else Danger
