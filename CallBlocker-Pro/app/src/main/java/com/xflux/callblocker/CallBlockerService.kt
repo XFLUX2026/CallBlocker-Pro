@@ -7,6 +7,12 @@ import kotlinx.coroutines.runBlocking
 
 class CallBlockerService : CallScreeningService() {
     override fun onScreenCall(details: Call.Details) {
+        // Com a proteção pausada, o serviço apenas libera a chamada sem aplicar filtros.
+        if (!ProtectionSettings.isEnabled(this)) {
+            respondToCall(details, CallResponse.Builder().build())
+            return
+        }
+
         if (details.callDirection != Call.Details.DIRECTION_INCOMING) {
             respondToCall(details, CallResponse.Builder().build())
             return
