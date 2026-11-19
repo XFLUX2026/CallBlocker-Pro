@@ -100,6 +100,9 @@ class MainActivity : ComponentActivity() {
                 Column(Modifier.fillMaxSize().background(Navy).padding(padding).padding(horizontal = 18.dp, vertical = 14.dp)) {
                     Text("CallBlocker Pro", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
                     Text("Sua linha, suas regras.", color = Muted, fontSize = 13.sp)
+                    TextButton(onClick = { startActivity(android.content.Intent(this@MainActivity, BackupActivity::class.java)) }) {
+                        Icon(Icons.Default.Save, null); Spacer(Modifier.width(6.dp)); Text("Backup e restauração")
+                    }
                     Spacer(Modifier.height(14.dp))
                     when (selectedTab) {
                         0 -> {
