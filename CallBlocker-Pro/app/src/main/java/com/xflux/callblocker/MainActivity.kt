@@ -55,7 +55,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun CallBlockerScreen() {
         val roleManager = getSystemService(RoleManager::class.java)
-        var active by remember { mutableStateOf(roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) }
+        var roleGranted by remember { mutableStateOf(roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) }
+        var protectionEnabled by remember { mutableStateOf(ProtectionSettings.isEnabled(this@MainActivity)) }
+        val active = roleGranted && protectionEnabled
         var hasContactsPermission by remember { mutableStateOf(checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) }
         var allowNumber by remember { mutableStateOf("") }
         var blockNumber by remember { mutableStateOf("") }
@@ -65,7 +67,11 @@ class MainActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
         val historyDao = remember { AppDb.get(this@MainActivity).blockedDao() }
         val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            active = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            roleGranted = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            if (roleGranted) {
+                ProtectionSettings.setEnabled(this@MainActivity, true)
+                protectionEnabled = true
+            }
         }
         val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
             hasContactsPermission = it
@@ -75,7 +81,8 @@ class MainActivity : ComponentActivity() {
         val blockedNumbers = remember(refresh) { BlockList.all(this@MainActivity).toList().sorted() }
 
         LaunchedEffect(Unit) {
-            active = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            roleGranted = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            protectionEnabled = ProtectionSettings.isEnabled(this@MainActivity)
             hasContactsPermission = checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
             HistoryMigration.importLegacy(this@MainActivity, historyDao)
             blockedCount = historyDao.count()
@@ -103,17 +110,25 @@ class MainActivity : ComponentActivity() {
                                         color = if (active) Lime else Danger, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                                     Text(
                                         if (active) "Seu aparelho está protegido contra chamadas indesejadas."
-                                        else "Desativado: risco de receber ligações indesejadas.",
+                                        else "Filtro pausado. Nenhuma chamada será bloqueada pelo aplicativo.",
                                         color = if (active) Muted else Danger,
                                         fontSize = 12.sp
                                     )
                                     Spacer(Modifier.height(12.dp))
                                     Button(onClick = {
-                                        if (!active) roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
-                                    }, enabled = !active, modifier = Modifier.fillMaxWidth()) {
-                                        Icon(if (active) Icons.Default.Shield else Icons.Default.PowerSettingsNew, null)
+                                        if (active) {
+                                            ProtectionSettings.setEnabled(this@MainActivity, false)
+                                            protectionEnabled = false
+                                        } else if (!roleGranted) {
+                                            roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
+                                        } else {
+                                            ProtectionSettings.setEnabled(this@MainActivity, true)
+                                            protectionEnabled = true
+                                        }
+                                    }, modifier = Modifier.fillMaxWidth()) {
+                                        Icon(if (active) Icons.Default.PowerSettingsNew else Icons.Default.Shield, null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text(if (active) "Proteção ligada" else "Ativar proteção")
+                                        Text(if (active) "Desativar proteção" else "Ativar proteção")
                                     }
                                     Text("$blockedCount chamadas bloqueadas", color = Lime, modifier = Modifier.padding(top = 10.dp))
                                 }
