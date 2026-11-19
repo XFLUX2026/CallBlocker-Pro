@@ -11,8 +11,8 @@ android {
         applicationId = "com.xflux.callblocker"
         minSdk = 29
         targetSdk = 35
-        versionCode = 6
-        versionName = "2.3"
+        versionCode = 7
+        versionName = "2.4"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
