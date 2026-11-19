@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - "feature/versao-2-completa"
+      - "feature/backup-restauracao-2-4"
     paths:
       - "CallBlocker-Pro/**"
       - ".github/workflows/android-apk.yml"
@@ -29,6 +30,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CallBlockerPro-2.1-debug
+          name: CallBlockerPro-2.4-debug
           path: CallBlocker-Pro/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
